@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Member</title>
+    <style>
+        body {
+            background-color: #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        #addForm {
+            background-color: #333;
+            padding: 2em;
+            border-radius: 0.5em;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        input {
+            margin-bottom: 1em;
+            padding: 0.5em;
+            border: none;
+            border-radius: 0.3em;
+        }
+        
+        button {
+            padding: 1em;
+            border: none;
+            border-radius: 0.5em;
+            background-color: #777;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        #membersTableWrapper {
+            margin-top: 20px;
+            max-height: 80%;
+            /* Set the max height for the scrollable area */
+            overflow-y: auto;
+            /* Enable vertical scrolling */
+            color: #fff;
+        }
+        
+        #membersTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        #membersTable th,
+        #membersTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .memberItem.expanded ul {
+            display: block;
+        }
+        
+        #rmbutton {
+            padding: 1em;
+            border: none;
+            border-radius: 0.5em;
+            background-color: #777;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="membersTableWrapper">
+        <table id="membersTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Image URL</th>
+                    <th>About EN</th>
+                    <th>About SV</th>
+                    <th>Skills</th>
+                    <th>Links</th>
+                </tr>
+            </thead>
+            <tbody id="membersList">
+                <!-- Display members here -->
+            </tbody>
+            <tbody id="addRow">
+                <td><input type="text" id="newName" name="newName"></td>
+                <td><input type="text" id="newImageURL" name="newImageURL"></td>
+                <td><input type="text" id="newAboutEN" name="newAboutEN"></td>
+                <td><input type="text" id="newAboutSV" name="newAboutSV"></td>
+                <td><input type="text" id="newSkills" name="newSkills"></td>
+                <td><input type="text" id="newLinks" name="newLinks"></td>
+                <td><button type="button" onclick="addNewMember()">+</button></td>
+            </tbody>
+        </table>
+    </div>
+
+
+    <script>
+        async function removeMember(memberID) {
+            if (!window.confirm("Are you sure you want to remove:\nUser with MEMBERID: " + memberID)) {
+                return;
+            }
+            const token = getToken();
+
+            try {
+                const response = await fetch('/api/del/member', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        'id': memberID
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('Member removed successfully');
+                    getMembers();
+                } else {
+                    console.error('Failed to remove member');
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+
+        async function addNewMember() {
+            const name = document.getElementById('newName').value;
+            const imageURL = document.getElementById('newImageURL').value;
+            const aboutEN = document.getElementById('newAboutEN').value;
+            const aboutSV = document.getElementById('newAboutSV').value;
+            const skills = document.getElementById('newSkills').value.split(',');
+            const links = document.getElementById('newLinks').value.split(',');
+
+            const newMember = new Member('', name, imageURL, {
+                en: aboutEN,
+                sv: aboutSV
+            }, skills.map(skill => {
+                const [skillName, skillLevel] = skill.trim().split(':');
+                return new Skill(skillName.trim(), skillLevel.trim());
+            }), links.map(link => {
+                const [linkName, linkURL] = link.trim().split(' ');
+                return new Link(linkName.trim(), linkURL.trim());
+            }));
+
+            const membersListElement = document.getElementById('membersList');
+            const memberItemElement = createTableRows(newMember);
+            //membersListElement.insertBefore(memberItemElement, document.getElementById('addRow'));
+
+            const token = getToken();
+
+            try {
+                const response = await fetch('/api/add/member', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newMember)
+                });
+
+                if (response.ok) {
+                    console.log('Member added successfully');
+                    // After adding a member, refresh the member list
+                    getMembers();
+                } else {
+                    console.error('Failed to add member');
+                }
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+
+            // Clear the input fields
+            document.getElementById('newName').value = '';
+            document.getElementById('newImageURL').value = '';
+            document.getElementById('newAboutEN').value = '';
+            document.getElementById('newAboutSV').value = '';
+            document.getElementById('newSkills').value = '';
+            document.getElementById('newLinks').value = '';
+
+        }
+
+        class Skill {
+            constructor(name, level) {
+                this.name = name || '';
+                this.level = level || '';
+            }
+        }
+
+        class Link {
+            constructor(name, url) {
+                this.name = name || '';
+                this.url = url || '';
+            }
+        }
+
+        class Member {
+            constructor(id, name, imageURL, about, skills, links) {
+                this.id = id || '';
+                this.name = name || '';
+                this.image_url = imageURL || '';
+                this.about = about || {};
+                this.skills = skills || [];
+                this.links = links || [];
+            }
+        }
+
+        function createTableRows(member) {
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>${member.name}</td>
+                <td>${member.image_url}</td>
+                <td>${member.about != null ? member.about['en'] : ''}</td>
+                <td>${member.about != null ? member.about['sv'] : ''}</td>
+                <td>${member.skills ? member.skills.map(skill => `${skill.name}: ${skill.level}`).join('<br>') : ''}</td>
+                <td>${member.links ? member.links.map(link => `${link.name}: ${link.url}`).join('<br>') : ''}</td>
+                <td><button type="button" onclick="removeMember(\'${member.id}\')">-</button></td>
+            `;
+
+            // Toggle details visibility on click
+            row.addEventListener('click', () => {
+                // Toggle the 'expanded' class on the parent row
+                row.classList.toggle('expanded');
+            });
+
+            return row;
+        }
+
+        async function getMembers() {
+            try {
+                const response = await fetch('/api/member');
+                const members = await response.json();
+
+                // Display members in the #membersList tbody
+                const membersListElement = document.getElementById('membersList');
+                membersListElement.innerHTML = '';
+
+                members.forEach(member => {
+                    const memberItemElement = createTableRows(member);
+                    membersListElement.appendChild(memberItemElement);
+                });
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+
+
+    async function addMember() {
+        const name = document.getElementById('name').value;
+        const imageURL = document.getElementById('imageURL').value;
+        const about = document.getElementById('about').value;
+
+        const member_data = new Member('', name, imageURL, {
+            description: about
+        }, [], []);
+
+        const token = getToken();
+
+        try {
+            const response = await fetch('/api/add/member', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(member_data)
+            });
+
+            if (response.ok) {
+                console.log('Member added successfully');
+                // After adding a member, refresh the member list
+                getMembers();
+            } else {
+                console.error('Failed to add member');
+            }
+        } catch (error) {
+            console.error('Error:', error.message);
+        }
+    }
+
+    function getToken() {
+        return localStorage.getItem('token');
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        getMembers();
+        /*if (isTokenExpired(getToken)) {
+            window.location.href = '/login';
+        } else {
+            console.log("User is logged in");
+        }*/
+    });
+    </script>
+
+</html>

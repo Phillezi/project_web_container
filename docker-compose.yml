@@ -1,0 +1,20 @@
+version: '3'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    environment:
+      - SERVER_PORT=8080
+      - SECRET_KEY=your-secret-key
+      - MONGO_URI=mongodb://go_secret_user:go_secret_pass@mongodb:27017
+      - MONGO_DB=goDB
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=your-mongo-root-username
+      - MONGO_INITDB_ROOT_PASSWORD=your-mongo-root-password

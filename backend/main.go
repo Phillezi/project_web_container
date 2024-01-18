@@ -78,7 +78,7 @@ func init() {
         secretKey = "your-secret-key"
     }
     if mongoURI == "" {
-        mongoURI = "mongodb://go_secret_user:go_secret_pass@mongodb:27018"
+        mongoURI = "mongodb://go_secret_user:go_secret_pass@mongodb:27017"
     }
     if mongoDB == "" {
         mongoDB = "goDB"

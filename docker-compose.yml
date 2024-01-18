@@ -1,4 +1,4 @@
-version: '3'
+version: '3.7'
 services:
   backend:
     build: ./backend
@@ -11,10 +11,16 @@ services:
       - SECRET_KEY=your-secret-key
       - MONGO_URI=mongodb://go_secret_user:go_secret_pass@mongodb:27017
       - MONGO_DB=goDB
+      - WEB_USERNAME=your-username
+      - WEB_PASSWORD=your-password
   mongodb:
     image: mongo
     ports:
-      - "27017:27017"
+      - 27017:27017
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=your-mongo-root-username
-      - MONGO_INITDB_ROOT_PASSWORD=your-mongo-root-password
+      MONGO_INITDB_ROOT_USERNAME: your-mongo-root-username
+      MONGO_INITDB_ROOT_PASSWORD: your-mongo-root-password
+      MONGO_INITDB_DATABASE: goDB
+    #command: ["--auth"]
+    volumes:
+      - ./init-mongo-users.js:/docker-entrypoint-initdb.d/init-mongo-users.js:ro

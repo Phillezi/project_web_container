@@ -10,6 +10,7 @@ import (
 	"time"
 	"log"
 	"strings"
+	"strconv"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -95,7 +96,7 @@ func init() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err = client.Ping(ctx, nil)
+	err := client.Ping(ctx, nil)
 	if err != nil {
 		log.Fatal("Failed to ping MongoDB:", err)
 		return
@@ -105,6 +106,38 @@ func init() {
 
 	memberCollection = client.Database(config.Mongo.Database).Collection("member")
 	userCollection = client.Database(config.Mongo.Database).Collection("user")
+}
+
+// create a user
+func createUser(username, password string) error {
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+
+	result := userCollection.FindOne(context.Background(), bson.M{"username": username})
+
+	var existingUser User
+	if err := result.Decode(&existingUser); err == nil {
+		fmt.Println("User already exists")
+		return fmt.Errorf("Error username already exist")
+	} else if err != mongo.ErrNoDocuments {
+		return fmt.Errorf("Error searching if user exsists: %v", err)
+	} 
+
+	newUser := User{
+		Username: username,
+		Password: string(hashedPassword),
+	}
+
+	_, err = userCollection.InsertOne(context.Background(), newUser)
+	if err != nil {
+		return fmt.Errorf("failed to insert user into the database: %v", err)
+	}
+
+	fmt.Println("User created successfully!")
+	return nil
 }
 
 func getMembers(w http.ResponseWriter, r *http.Request) {
@@ -448,6 +481,16 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	username_ := os.Getenv("WEB_USERNAME")
+    password_ := os.Getenv("WEB_PASSWORD")
+	if username_ != "" && password_ != "" {
+		err := createUser(username_, password_)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
+	}
+	
+
 	r := mux.NewRouter()
 
 	r.Use(corsMiddleware)

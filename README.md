@@ -7,7 +7,7 @@
 ## Instructions
 # clone this repo
 ```bash
-git clone <>
+git clone git@github.com:Phillezi/project_web_container.git
 ```
 
 ```

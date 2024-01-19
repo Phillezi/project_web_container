@@ -41,6 +41,16 @@ type Link struct {
 	URL  string `json:"url" bson:"url,omitempty"`
 }
 
+//----------------- <TEXTCONTENT>
+type TextContent struct {
+    ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Section string 				`json:"section" bson:"section,omitempty"`
+    Language string             `json:"language" bson:"language,omitempty"`
+    Title    string             `json:"title" bson:"title,omitempty"`
+    Paragraphs []string         `json:"paragraphs" bson:"paragraphs,omitempty"`
+}
+//----------------- </TEXTCONTENT>
+
 type User struct {
 	UserID primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Username string `json:"username" bson:"username,omitempty"`
@@ -61,6 +71,7 @@ type Config struct {
 var (
 	client     *mongo.Client
 	memberCollection *mongo.Collection
+	contentCollection *mongo.Collection
 	userCollection *mongo.Collection
 	config     Config
 )
@@ -105,6 +116,7 @@ func init() {
 	fmt.Println("Connected to MongoDB!")
 
 	memberCollection = client.Database(config.Mongo.Database).Collection("member")
+	contentCollection = client.Database(config.Mongo.Database).Collection("content")
 	userCollection = client.Database(config.Mongo.Database).Collection("user")
 }
 
@@ -267,15 +279,58 @@ func deleteMember(w http.ResponseWriter, r *http.Request) {
 	Handler for GET /api/content
 */
 func getContent(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Content endpoint - GET request")
+	var result []TextContent
+
+	cur, err := contentCollection.Find(context.Background(), bson.D{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cur.Close(context.Background())
+
+	for cur.Next(context.Background()) {
+		var content TextContent
+		err := cur.Decode(&content)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		result = append(result, content)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 /*
 	Handler for POST /api/content
 */
 func createContent(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Content endpoint - POST request")
+	var newContent TextContent
+	err := json.NewDecoder(r.Body).Decode(&newContent)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if newContent.Language == "" || newContent.Title == "" {
+		http.Error(w, "Language and Title are required fields", http.StatusBadRequest)
+		return
+	}
+
+	insertResult, err := contentCollection.InsertOne(context.Background(), newContent)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newContent.ID = insertResult.InsertedID.(primitive.ObjectID)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newContent)
 }
+
 
 /*
 	Handler for POST /api/login

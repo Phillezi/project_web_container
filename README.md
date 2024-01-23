@@ -2,6 +2,8 @@
 
 This repository contains a Docker Compose setup for a web-app for a project pitch site with a go backend container and MongoDB container.
 
+Note: This project is a personal exploration/learning of Docker and Go, and I have minimal prior experience with both technologies. Therfore especially the backend may contain security flaws and oversights aswell as not so clean code.
+
 ## Requirements
 - Docker
 

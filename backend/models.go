@@ -17,6 +17,7 @@ type Member struct {
 	About     map[string]string  `json:"about" bson:"about"`
 	Skills    []Skill            `json:"skills" bson:"skills"`
 	Links     []Link             `json:"links" bson:"links"`
+	Contacts  []Contact          `json:"contact" bson:"contact,omitempty"`
 	CreatedBy primitive.ObjectID `json:"createdby" bson:"createdby,omitempty"`
 }
 
@@ -28,6 +29,11 @@ type Skill struct {
 type Link struct {
 	Name string `json:"name" bson:"name,omitempty"`
 	URL  string `json:"url" bson:"url,omitempty"`
+}
+
+type Contact struct {
+	Name string `json:"name" bson:"name,omitempty"`
+	Value  string `json:"value" bson:"value,omitempty"`
 }
 
 type TextContent struct {

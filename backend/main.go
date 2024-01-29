@@ -1,5 +1,10 @@
 package main
 
+/*
+	Project pitch website backend in Go.
+	Author: Philip Zingmark 
+*/
+
 import (
 	"context"
 	"errors"
@@ -45,6 +50,10 @@ func main() {
 	api_post.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		LoginUser(w, r, app)
 	})
+
+	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		PollHealth(w, r, &app)
+	}).Methods("GET")
 
 	r.HandleFunc("/{path:.*}", ServeBuild)
 

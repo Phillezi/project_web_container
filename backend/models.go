@@ -62,6 +62,7 @@ type App struct {
 	userCollection    *mongo.Collection
 	config            Config
 	server            *http.Server
+	dbConnected 	  bool
 }
 
 func (app *App) initialize() {
@@ -97,9 +98,11 @@ func (app *App) initialize() {
 
 	if DBconnect(app) {
 		fmt.Println("Connected to the database")
+		app.dbConnected = true
 		DBgetCollections(app)
 	} else {
 		fmt.Println("Could not connect to the database...")
+		app.dbConnected = false
 	}
 
 }
@@ -107,6 +110,11 @@ func (app *App) initialize() {
 func (app *App) close() {
 	if DBdisconnect(app) {
 		fmt.Println("Disconnected from database")
+		app.dbConnected = false
 	}
 
+}
+
+func (app *App) IsOk() bool {
+    return app.dbConnected
 }

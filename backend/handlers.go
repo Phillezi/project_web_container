@@ -24,6 +24,16 @@ func ServeBuild(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, fullPath)
 }
 
+func PollHealth(w http.ResponseWriter, r *http.Request, app *App) {
+	if app.IsOk() {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	} else {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Write([]byte("Service Unavailable"))
+	}
+}
+
 func ServeContent(w http.ResponseWriter, r *http.Request, contentCollection *mongo.Collection) {
 	var result []TextContent
 

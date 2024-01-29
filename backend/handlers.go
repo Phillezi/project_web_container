@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,6 +22,12 @@ func ServeBuild(w http.ResponseWriter, r *http.Request) {
 
 	fullPath := filepath.Join("build", filePath)
 
+	http.ServeFile(w, r, fullPath)
+}
+
+func ServeImage(w http.ResponseWriter, r *http.Request) {
+	filePath := strings.TrimPrefix(r.URL.Path, "/images/")
+	fullPath := filepath.Join("images", filePath)
 	http.ServeFile(w, r, fullPath)
 }
 

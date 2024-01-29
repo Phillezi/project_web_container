@@ -2,7 +2,6 @@ package main
 
 /*
 	Project pitch website backend in Go.
-	
 	Author: Philip Zingmark 
 */
 
@@ -55,6 +54,9 @@ func main() {
 	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		PollHealth(w, r, &app)
 	}).Methods("GET")
+
+	img_r := r.PathPrefix("/images").Subrouter()
+	img_r.HandleFunc("/{path:.*}", ServeImage)
 
 	r.HandleFunc("/{path:.*}", ServeBuild)
 

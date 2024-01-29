@@ -2,6 +2,7 @@ package main
 
 /*
 	Project pitch website backend in Go.
+	
 	Author: Philip Zingmark 
 */
 

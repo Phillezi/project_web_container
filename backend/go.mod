@@ -1,6 +1,6 @@
 module phililipzingmark.se/apibackend
 
-go 1.21
+go 1.21.6
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
